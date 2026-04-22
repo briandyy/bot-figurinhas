@@ -1,22 +1,39 @@
-# WhatsApp Sticker Bot (Clean Rebuild)
+# WhatsApp Sticker Bot (English-Only Edition)
 
-A cleaner, modular rewrite of the original project.
+A clean, modular WhatsApp bot for:
+- static sticker conversion (`image -> webp`)
+- animated sticker conversion (`video -> webp`)
+- Lottie `.was` sticker generation from editable templates
+- runtime `.env` editing directly from WhatsApp
 
-## What is new
+---
 
-- Full repository structure rebuilt with modular services and utilities.
-- `.env`-first configuration with runtime editing from WhatsApp commands.
-- Sticker conversion now supports:
-  - images
-  - videos (auto-converted to animated WebP sticker)
-  - existing stickers (re-send flow)
-- Lottie `.was` generation command kept and integrated.
-- All user-facing text translated to English.
+## Features
+
+- Full English codebase and documentation.
+- Modular architecture (`config`, `services`, `utils`).
+- Runtime environment management:
+  - `!env list`
+  - `!env get <KEY>`
+  - `!env set <KEY> <VALUE>`
+- Sticker input support:
+  - image
+  - video
+  - existing sticker (forward/re-send)
+- Lottie `.was` generation with selectable animation profile:
+  - `main`
+  - `secondary`
+  - custom JSON relative path
+
+---
 
 ## Requirements
 
-- **Node.js 26+** (configured in `package.json` engines).
-- npm.
+- Node.js (see `package.json` engines)
+- npm
+- ffmpeg binary via `ffmpeg-static` (installed as dependency)
+
+---
 
 ## Installation
 
@@ -24,35 +41,27 @@ A cleaner, modular rewrite of the original project.
 npm install
 ```
 
-## Configuration
+---
 
-Edit `.env`:
+## Configuration (`.env`)
+
+Use `.env.example` as your base.
 
 ```env
 PHONE_NUMBER=15551234567
 COMMAND_PREFIX=!
-BOT_LANGUAGE=en
 BOT_NAME=StickerBot
 STICKER_PACKNAME=My Sticker Pack
 STICKER_AUTHOR=StickerBot
 MAX_VIDEO_SECONDS=8
 AUTH_FOLDER=auth_info_baileys
 LOTTIE_BASE_FOLDER=./Lottie-Whatsapp/src/exemple
-LOTTIE_JSON_RELATIVE_PATH=animation/animation_secondary.json
+LOTTIE_MAIN_JSON_RELATIVE_PATH=animation/animation.json
+LOTTIE_SECONDARY_JSON_RELATIVE_PATH=animation/animation_secondary.json
 LOTTIE_OUTPUT_FILE=./output/generated_lottie.was
 ```
 
-### Runtime `.env` updates (while bot is running)
-
-Use these WhatsApp commands:
-
-- `!env list`
-- `!env get <KEY>`
-- `!env set <KEY> <VALUE>`
-
-Every `!env set` command updates both:
-1. `.env` file on disk.
-2. `process.env` in memory.
+---
 
 ## Run
 
@@ -60,18 +69,61 @@ Every `!env set` command updates both:
 npm start
 ```
 
+When connected, send `!help` in WhatsApp.
+
+---
+
 ## Commands
 
-- `!help`
-- `!ping`
-- `!sticker` (reply to image/video/sticker)
-- `!lottie` (reply to image)
+- `!help` — list commands
+- `!tutorial` — practical quick-start instructions
+- `!ping` — health check
+- `!sticker` — reply to image/video/sticker
+- `!lottie [main|secondary|relative-json-path]` — reply to image
+- `!config` — show active runtime config
 - `!env list`
 - `!env get <KEY>`
 - `!env set <KEY> <VALUE>`
 
-## Notes
+---
 
-- Video stickers are capped by `MAX_VIDEO_SECONDS`.
-- Converted stickers are built as WebP.
-- Lottie `.was` generation uses the local `Lottie-Whatsapp` builder.
+## Easy workflow for changing Lottie animation (main + secondary)
+
+If the default JSON templates feel confusing, use this workflow:
+
+1. Open your animation in **LottieFiles Editor** (web) or **Adobe After Effects + Bodymovin**.
+2. Edit keyframes visually (position, scale, rotation, opacity).
+3. Export as Lottie JSON.
+4. Replace one of these files in `Lottie-Whatsapp/src/exemple/animation/`:
+   - `animation.json` (main profile)
+   - `animation_secondary.json` (secondary profile)
+5. Run bot and use:
+   - `!lottie main`
+   - `!lottie secondary`
+
+You can also keep multiple JSON files and call a specific one directly:
+
+```text
+!lottie animation/my_custom_profile.json
+```
+
+(That path is relative to `LOTTIE_BASE_FOLDER`.)
+
+---
+
+## Troubleshooting
+
+- **"Reply to an image/video/sticker"**: you must reply to a message that contains media.
+- **Video rejected**: increase `MAX_VIDEO_SECONDS` with `!env set MAX_VIDEO_SECONDS <N>`.
+- **Lottie errors**: verify the JSON file exists under `LOTTIE_BASE_FOLDER` and contains an embedded base64 image asset.
+
+---
+
+## Project structure
+
+- `index.js` — bootstrap
+- `src/config/env.js` — read/write `.env`
+- `src/config/runtime.js` — runtime config mapping
+- `src/services/bot.js` — command router and handlers
+- `src/utils/media.js` — media extraction/download/conversion
+- `Lottie-Whatsapp/` — `.was` builder utilities and templates
