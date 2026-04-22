@@ -1,17 +1,30 @@
 {
   "name": "bot-figurinhas",
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "description": "WhatsApp sticker bot with dynamic .env configuration, Lottie .was support, and image/video to sticker conversion.",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "check": "node --check index.js"
   },
-  "keywords": [],
+  "keywords": [
+    "whatsapp",
+    "baileys",
+    "sticker",
+    "lottie",
+    "was"
+  ],
   "author": "",
-  "license": "ISC",
-  "description": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=26.0.0"
+  },
   "dependencies": {
-    "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "@whiskeysockets/baileys": "^6.7.19",
     "adm-zip": "^0.5.17",
+    "dotenv": "^17.2.2",
+    "ffmpeg-static": "^5.2.0",
     "qrcode-terminal": "^0.12.0"
   }
 }
