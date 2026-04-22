@@ -2,7 +2,6 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
-const { execSync } = require("child_process");
 
 const MIME = {
   ".png": "image/png",
@@ -59,14 +58,14 @@ function replaceBase64Image(jsonPath, dataUri) {
 function zipToWas(paramA, paramB) {
   const AdmZip = require('adm-zip');
   const zip = new AdmZip();
-  
+
   // Parameter order is auto-detected to keep compatibility.
-  const arquivoSaida = paramA.includes('.zip') || paramA.includes('.was') ? paramA : paramB;
-  const pastaOrigem = paramA === arquivoSaida ? paramB : paramA;
-  
+  const outputFile = paramA.includes('.zip') || paramA.includes('.was') ? paramA : paramB;
+  const sourceFolder = paramA === outputFile ? paramB : paramA;
+
   // Add all temp folder contents to the root of the WAS archive.
-  zip.addLocalFolder(pastaOrigem);
-  zip.writeZip(arquivoSaida);
+  zip.addLocalFolder(sourceFolder);
+  zip.writeZip(outputFile);
 }
 
 async function buildLottieSticker({

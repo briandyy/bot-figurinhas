@@ -1,17 +1,22 @@
-const { buildLottieSticker } = require("./src/index");
+const fs = require('fs');
+const path = require('path');
+const { buildLottieSticker } = require('./src/index');
 
-//CÓDIGO DO BOT
+/**
+ * Example helper that builds a .was sticker from an incoming image buffer.
+ */
+async function buildStickerFromBuffer(imageBuffer) {
+  const outputPath = path.resolve(__dirname, 'example_output.was');
 
-if () {
-  const output = await buildLottieSticker({
-    baseFolder: path.resolve(__dirname, "src", "exemple"),
-    buffer: dfileBuffer,
-    mime: "image/jpeg",
-    output: path.resolve(__dirname, "jurubeba.was")
+  await buildLottieSticker({
+    baseFolder: path.resolve(__dirname, 'src', 'exemple'),
+    buffer: imageBuffer,
+    mime: 'image/jpeg',
+    output: outputPath,
+    jsonRelativePath: 'animation/animation_secondary.json'
   });
-await client.sendMessage(from, {
-sticker: fs.readFileSync("./jurubeba.was"),
-mimetype: "application/was"
-});
 
+  return fs.readFileSync(outputPath);
 }
+
+module.exports = { buildStickerFromBuffer };

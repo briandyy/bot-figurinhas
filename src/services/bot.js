@@ -37,14 +37,54 @@ function parseCommand(text, prefix) {
 
 async function sendHelp(sock, jid, m, prefix) {
   const body = [
-    '*Sticker Bot Commands*',
+    '*Sticker Bot Commands (English)*',
     `${prefix}help - Show this help menu`,
+    `${prefix}tutorial - Quick setup and usage guide`,
     `${prefix}ping - Health check`,
     `${prefix}sticker - Reply to an image/video/sticker to convert/send as sticker`,
-    `${prefix}lottie - Reply to an image and generate a .was Lottie sticker`,
+    `${prefix}lottie [main|secondary|relative-json-path] - Reply to an image and generate a .was Lottie sticker`,
+    `${prefix}config - Show active runtime configuration`,
     `${prefix}env get <KEY> - Read key from .env`,
     `${prefix}env set <KEY> <VALUE> - Update .env while bot is running`,
     `${prefix}env list - List available .env keys`
+  ].join('\n');
+
+  await sock.sendMessage(jid, { text: body }, { quoted: m });
+}
+
+async function sendTutorial(sock, jid, m, prefix) {
+  const body = [
+    '*Quick Tutorial*',
+    '1) Start the bot with: npm start',
+    '2) Scan the QR (or use pairing code) once.',
+    `3) In WhatsApp, send ${prefix}help`,
+    `4) Reply to media and send ${prefix}sticker`,
+    `5) For animated .was, reply to an image and send ${prefix}lottie secondary`,
+    '',
+    '*Runtime settings*',
+    `- ${prefix}env list`,
+    `- ${prefix}env get MAX_VIDEO_SECONDS`,
+    `- ${prefix}env set MAX_VIDEO_SECONDS 10`,
+    '',
+    '*Animation template switching*',
+    `- ${prefix}lottie main (uses LOTTIE_MAIN_JSON_RELATIVE_PATH)`,
+    `- ${prefix}lottie secondary (uses LOTTIE_SECONDARY_JSON_RELATIVE_PATH)`
+  ].join('\n');
+
+  await sock.sendMessage(jid, { text: body }, { quoted: m });
+}
+
+async function sendRuntimeConfig(sock, jid, m, config) {
+  const body = [
+    '*Current Runtime Config*',
+    `BOT_NAME=${config.botName}`,
+    `COMMAND_PREFIX=${config.commandPrefix}`,
+    `MAX_VIDEO_SECONDS=${config.maxVideoSeconds}`,
+    `AUTH_FOLDER=${config.authFolder}`,
+    `LOTTIE_BASE_FOLDER=${config.lottieBaseFolder}`,
+    `LOTTIE_MAIN_JSON_RELATIVE_PATH=${config.lottieMainJsonRelativePath}`,
+    `LOTTIE_SECONDARY_JSON_RELATIVE_PATH=${config.lottieSecondaryJsonRelativePath}`,
+    `LOTTIE_OUTPUT_FILE=${config.lottieOutputFile}`
   ].join('\n');
 
   await sock.sendMessage(jid, { text: body }, { quoted: m });
@@ -126,7 +166,13 @@ async function handleStickerCommand(sock, jid, m, config) {
   );
 }
 
-async function handleLottieCommand(sock, jid, m, config) {
+function resolveLottieJsonPath(config, selection) {
+  if (!selection || selection === 'secondary') return config.lottieSecondaryJsonRelativePath;
+  if (selection === 'main') return config.lottieMainJsonRelativePath;
+  return selection;
+}
+
+async function handleLottieCommand(sock, jid, m, config, args) {
   const payload = extractMessageContent(m);
   if (!payload || payload.kind === 'video') {
     await sock.sendMessage(jid, { text: 'Reply to an image to build a Lottie .was sticker.' }, { quoted: m });
@@ -134,6 +180,8 @@ async function handleLottieCommand(sock, jid, m, config) {
   }
 
   const media = await downloadMessageMedia(payload);
+  const selection = (args[0] || 'secondary').toLowerCase();
+  const jsonRelativePath = resolveLottieJsonPath(config, selection);
 
   const outputPath = path.resolve(process.cwd(), config.lottieOutputFile);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
@@ -143,7 +191,7 @@ async function handleLottieCommand(sock, jid, m, config) {
     output: outputPath,
     buffer: media.buffer,
     mime: media.mimeType,
-    jsonRelativePath: config.lottieJsonRelativePath
+    jsonRelativePath
   });
 
   const wasBuffer = fs.readFileSync(outputPath);
@@ -223,6 +271,9 @@ async function startBot() {
         case 'help':
           await sendHelp(sock, jid, m, latestConfig.commandPrefix);
           break;
+        case 'tutorial':
+          await sendTutorial(sock, jid, m, latestConfig.commandPrefix);
+          break;
         case 'ping':
           await sock.sendMessage(jid, { text: 'pong' }, { quoted: m });
           break;
@@ -230,7 +281,10 @@ async function startBot() {
           await handleStickerCommand(sock, jid, m, latestConfig);
           break;
         case 'lottie':
-          await handleLottieCommand(sock, jid, m, latestConfig);
+          await handleLottieCommand(sock, jid, m, latestConfig, parsed.args);
+          break;
+        case 'config':
+          await sendRuntimeConfig(sock, jid, m, latestConfig);
           break;
         case 'env':
           await handleEnvCommand(sock, jid, m, parsed.args);

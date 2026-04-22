@@ -8,7 +8,9 @@ function getRuntimeConfig() {
     maxVideoSeconds: Number(process.env.MAX_VIDEO_SECONDS || 8),
     authFolder: process.env.AUTH_FOLDER || 'auth_info_baileys',
     lottieBaseFolder: process.env.LOTTIE_BASE_FOLDER || './Lottie-Whatsapp/src/exemple',
-    lottieJsonRelativePath: process.env.LOTTIE_JSON_RELATIVE_PATH || 'animation/animation_secondary.json',
+    lottieMainJsonRelativePath: process.env.LOTTIE_MAIN_JSON_RELATIVE_PATH || 'animation/animation.json',
+    lottieSecondaryJsonRelativePath:
+      process.env.LOTTIE_SECONDARY_JSON_RELATIVE_PATH || 'animation/animation_secondary.json',
     lottieOutputFile: process.env.LOTTIE_OUTPUT_FILE || './output/generated_lottie.was'
   };
 }
