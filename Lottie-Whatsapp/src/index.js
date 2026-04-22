@@ -2,7 +2,6 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
-const { execSync } = require("child_process");
 
 const MIME = {
   ".png": "image/png",
@@ -30,11 +29,11 @@ function getMime(filePath, mime) {
 
 function toDataUri(buffer, mime) {
   if (!buffer || !Buffer.isBuffer(buffer)) {
-    throw new Error("Buffer inválido.");
+    throw new Error("Invalid buffer.");
   }
 
   if (!mime) {
-    throw new Error("Mime não detectado. Informe imagePath ou mime.");
+    throw new Error("Mime type not detected. Provide imagePath or mime.");
   }
 
   return `data:${mime};base64,${buffer.toString("base64")}`;
@@ -44,12 +43,12 @@ function replaceBase64Image(jsonPath, dataUri) {
   const json = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
 
   if (!Array.isArray(json.assets)) {
-    throw new Error("JSON sem assets.");
+    throw new Error("JSON without assets.");
   }
 
   const asset = json.assets.find(a => typeof a?.p === "string" && a.p.startsWith("data:image/"));
   if (!asset) {
-    throw new Error("Nenhuma imagem base64 encontrada no Lottie.");
+    throw new Error("No base64 image found in the Lottie asset list.");
   }
 
   asset.p = dataUri;
@@ -59,14 +58,14 @@ function replaceBase64Image(jsonPath, dataUri) {
 function zipToWas(paramA, paramB) {
   const AdmZip = require('adm-zip');
   const zip = new AdmZip();
-  
-  // Como não sabemos a ordem exata dos parâmetros que ele usou, a gente detecta automático:
-  const arquivoSaida = paramA.includes('.zip') || paramA.includes('.was') ? paramA : paramB;
-  const pastaOrigem = paramA === arquivoSaida ? paramB : paramA;
-  
-  // Pega tudo dentro da pasta temp e joga na raiz do arquivo WAS
-  zip.addLocalFolder(pastaOrigem);
-  zip.writeZip(arquivoSaida);
+
+  // Parameter order is auto-detected to keep compatibility.
+  const outputFile = paramA.includes('.zip') || paramA.includes('.was') ? paramA : paramB;
+  const sourceFolder = paramA === outputFile ? paramB : paramA;
+
+  // Add all temp folder contents to the root of the WAS archive.
+  zip.addLocalFolder(sourceFolder);
+  zip.writeZip(outputFile);
 }
 
 async function buildLottieSticker({
@@ -77,19 +76,19 @@ async function buildLottieSticker({
   mime,
   jsonRelativePath = "animation/animation_secondary.json"
 }) {
-  if (!fs.existsSync(baseFolder)) throw new Error("baseFolder não encontrado.");
+  if (!fs.existsSync(baseFolder)) throw new Error("baseFolder not found.");
 
   if (!buffer && !imagePath) {
-    throw new Error("Envie imagePath ou buffer.");
+    throw new Error("Provide imagePath or buffer.");
   }
 
   if (!buffer && imagePath) {
-    if (!fs.existsSync(imagePath)) throw new Error("Imagem não encontrada.");
+    if (!fs.existsSync(imagePath)) throw new Error("Image not found.");
     buffer = fs.readFileSync(imagePath);
   }
 
   mime = getMime(imagePath, mime);
-  if (!mime) throw new Error("Formato não suportado. Use PNG, JPG, JPEG ou WEBP.");
+  if (!mime) throw new Error("Unsupported format. Use PNG, JPG, JPEG, or WEBP.");
 
   const temp = path.join(os.tmpdir(), `lottie-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`);
 
